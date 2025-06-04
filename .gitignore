@@ -1,0 +1,270 @@
+# .gitignore for Layout-Aware Web Scraper Project
+
+# ====================================
+# Python Environment & Dependencies
+# ====================================
+
+# Virtual Environments
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+layout_aware_scraper_env/
+.venv/
+.env/
+
+# Python Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ====================================
+# Environment & Configuration
+# ====================================
+
+# Environment Variables (CRITICAL - Contains API Keys)
+.env
+.env.local
+.env.production
+.env.staging
+*.env
+
+# Configuration Files with Secrets
+config.json
+secrets.json
+credentials.json
+*.key
+*.pem
+
+# ====================================
+# Browser & Playwright Files
+# ====================================
+
+# Playwright Browser Downloads
+/ms-playwright/
+playwright-browsers/
+.playwright/
+
+# Browser User Data & Cache
+user-data-dir/
+browser-cache/
+browser-profiles/
+test-results/
+playwright-report/
+
+# Screenshots & Videos (from debugging)
+screenshots/
+videos/
+traces/
+*.png
+*.jpg
+*.mp4
+*.webm
+
+# ====================================
+# Scraping Output & Data
+# ====================================
+
+# Scraped Data Files
+scraped_data/
+output/
+exports/
+downloads/
+data/
+results/
+extracted_content/
+
+# CSV, JSON, Excel outputs
+*.csv
+*.json
+*.xlsx
+*.xml
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# ====================================
+# Logs & Monitoring
+# ====================================
+
+# Log Files
+*.log
+logs/
+log/
+scraper.log*
+debug.log*
+error.log*
+access.log*
+
+# Monitoring & Metrics
+metrics/
+monitoring/
+performance/
+
+# ====================================
+# Development & Testing
+# ====================================
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
+
+# Jupyter Notebooks
+.ipynb_checkpoints/
+*.ipynb
+
+# IDE & Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ====================================
+# Docker & Containerization
+# ====================================
+
+# Docker
+Dockerfile.local
+docker-compose.override.yml
+.dockerignore
+
+# ====================================
+# CI/CD & Deployment
+# ====================================
+
+# GitHub Actions Secrets
+.github/workflows/secrets/
+
+# Deployment
+deploy/
+deployment/
+.deploy/
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# ====================================
+# Temporary & Cache Files
+# ====================================
+
+# OS Generated
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+*.tmp
+*.temp
+
+# Cache directories
+.cache/
+.npm/
+.yarn/
+node_modules/
+
+# ====================================
+# Security & Sensitive Data
+# ====================================
+
+# SSH Keys
+*.rsa
+*.pem
+id_rsa
+id_dsa
+
+# SSL Certificates
+*.crt
+*.cer
+*.p12
+
+# API Keys & Tokens
+api_keys.txt
+tokens.txt
+.secrets
+
+# ====================================
+# Project Specific Exclusions
+# ====================================
+
+# Large Browser Downloads
+chromium/
+firefox/
+webkit/
+
+# Session Data
+sessions/
+cookies/
+local_storage/
+
+# Performance Profiles
+*.prof
+*.profile
+
+# Backup Files
+backup/
+*.backup
+*.bak
+*.old
+
+# ====================================
+# Optional: Example Files to Keep
+# ====================================
+
+# You might want to include example/template files
+# Remove these lines if you want to ignore them too:
+# !.env.example
+# !config.example.json
+# !sample_data/
+
+# ====================================
+# Force Include Important Files
+# ====================================
+
+# Force include critical project files even if they match patterns above
+!requirements.txt
+!README.md
+!LICENSE
+!setup.py
+!pyproject.toml
