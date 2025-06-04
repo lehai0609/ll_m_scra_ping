@@ -106,16 +106,18 @@ async def test_enhanced_executor_on_kaggle():
                     # Look for discussion-specific elements
                     discussion_elements = await page.evaluate("""
                         () => {
+                            const hasNewButton = Array.from(document.querySelectorAll('button'))
+                                .some(el => el.textContent.trim().includes('New'));
+                            const hasNewDataTestId = !!document.querySelector('[data-testid*="new"]');
                             const elements = {
                                 discussion_threads: document.querySelectorAll('[data-testid*="discussion"], .discussion, .thread').length,
                                 post_elements: document.querySelectorAll('.post, .comment, [data-testid*="post"]').length,
-                                new_discussion_button: !!document.querySelector('button:has-text("New"), [data-testid*="new"]'),
+                                new_discussion_button: hasNewButton || hasNewDataTestId,
                                 has_discussion_content: document.body.textContent.toLowerCase().includes('discussion')
                             };
                             return elements;
                         }
-                    """)
-                    
+                    """) 
                     print(f"   📋 Discussion page analysis:")
                     for key, value in discussion_elements.items():
                         print(f"      {key}: {value}")
