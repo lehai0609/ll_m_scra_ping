@@ -5,7 +5,8 @@ import logging
 from typing import Dict, Any, Optional
 from dataclasses import dataclass
 
-from config.settings import ScrapingConfig, setup_logging
+from config.settings import ScrapingConfig
+from utils.logger import setup_logging  # Fixed import
 from core.browser_pool import BrowserPool
 from core.llm_agent import LLMNavigationAgent, ActionType
 from core.action_executor import ActionExecutor
@@ -238,6 +239,7 @@ async def test_kaggle_navigation():
     config = ScrapingConfig.from_env()
     config.validate()
     
+    # Initialize logging with the corrected import
     logger = setup_logging(config.log_level, config.log_file)
     
     scraper = LayoutAwareScraper(config)
@@ -247,8 +249,8 @@ async def test_kaggle_navigation():
         
         # Test session: Navigate to Kaggle competition and find discussion section
         session = ScrapingSession(
-            url="https://www.kaggle.com/competitions",
-            goal="Navigate to a competition page and find the discussion section",
+            url="https://www.kaggle.com/competitions/openai-to-z-challenge",
+            goal="Navigate to a OpenAI to Z competition page and find the discussion section",
             max_actions=5
         )
         
