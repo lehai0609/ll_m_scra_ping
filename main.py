@@ -1,15 +1,15 @@
-"""Entry point and integration test."""
-# main.py - Core Integration Test & Orchestration
+"""Entry point and integration test - Updated with Enhanced Action Executor."""
+# main.py - Updated with Enhanced Action Executor
 import asyncio
 import logging
 from typing import Dict, Any, Optional
 from dataclasses import dataclass
 
 from config.settings import ScrapingConfig
-from utils.logger import setup_logging  # Fixed import
+from utils.logger import setup_logging
 from core.browser_pool import BrowserPool
 from core.llm_agent import LLMNavigationAgent, ActionType
-from core.action_executor import ActionExecutor
+from core.action_executor import EnhancedActionExecutor  # Updated import
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -30,23 +30,24 @@ class ScrapingSession:
                 'actions_taken': [],
                 'extracted_content': {},
                 'navigation_path': [],
-                'errors': []
+                'errors': [],
+                'selector_strategies_used': []  # Track successful strategies
             }
 
 class LayoutAwareScraper:
-    """Main orchestrator for LLM-driven web scraping"""
+    """Main orchestrator for LLM-driven web scraping with enhanced action execution"""
     
     def __init__(self, config: ScrapingConfig):
         self.config = config
         self.browser_pool = BrowserPool(config)
         self.llm_agent = LLMNavigationAgent(config)
-        self.action_executor = ActionExecutor(config)
+        self.action_executor = EnhancedActionExecutor(config)  # Updated to use enhanced version
         
     async def initialize(self) -> None:
         """Initialize all components"""
-        logger.info("Initializing Layout-Aware Scraper...")
+        logger.info("Initializing Layout-Aware Scraper with Enhanced Action Executor...")
         await self.browser_pool.initialize()
-        logger.info("Scraper initialization complete")
+        logger.info("Enhanced scraper initialization complete")
     
     async def cleanup(self) -> None:
         """Clean up all resources"""
@@ -55,9 +56,9 @@ class LayoutAwareScraper:
         logger.info("Scraper cleanup complete")
     
     async def scrape_page(self, session: ScrapingSession) -> Dict[str, Any]:
-        """Execute a complete scraping session for a single page"""
+        """Execute a complete scraping session for a single page with enhanced action execution"""
         
-        logger.info(f"Starting scraping session: {session.url}")
+        logger.info(f"Starting enhanced scraping session: {session.url}")
         logger.info(f"Goal: {session.goal}")
         
         async with self.browser_pool.get_page() as page:
@@ -68,11 +69,11 @@ class LayoutAwareScraper:
                 
                 session.results['navigation_path'].append(session.url)
                 
-                # Main scraping loop
+                # Main scraping loop with enhanced action execution
                 while session.current_action < session.max_actions:
                     session.current_action += 1
                     
-                    logger.info(f"Action {session.current_action}/{session.max_actions}")
+                    logger.info(f"Enhanced Action {session.current_action}/{session.max_actions}")
                     
                     # Analyze current page state
                     page_state = await self._analyze_current_page(page, session)
@@ -85,8 +86,11 @@ class LayoutAwareScraper:
                         page_content_summary=page_state['content_summary']
                     )
                     
-                    # Record action
-                    session.results['actions_taken'].append(action.to_dict())
+                    # Record action with enhanced details
+                    action_record = action.to_dict()
+                    action_record['page_title'] = page_state['title']
+                    action_record['page_url'] = page_state['url']
+                    session.results['actions_taken'].append(action_record)
                     
                     # Handle extraction vs navigation
                     if action.action_type == ActionType.EXTRACT:
@@ -101,40 +105,82 @@ class LayoutAwareScraper:
                         break
                     
                     else:
-                        # Execute navigation action
+                        # Execute navigation action with enhanced executor
                         result = await self.action_executor.execute_action(page, action)
                         
+                        # Record detailed execution results
+                        execution_record = {
+                            'action_type': action.action_type.value,
+                            'target_description': action.target_description,
+                            'success': result.success,
+                            'message': result.message,
+                            'execution_data': result.data
+                        }
+                        
                         if not result.success:
-                            session.results['errors'].append(result.message)
-                            logger.warning(f"Action failed: {result.message}")
-                            # Continue with next action rather than breaking
+                            session.results['errors'].append(execution_record)
+                            logger.warning(f"Enhanced action failed: {result.message}")
+                            
+                            # For enhanced executor, we can analyze failure details
+                            if result.data and 'strategies_tried' in result.data:
+                                strategies_info = result.data['strategies']
+                                logger.info(f"Tried {result.data['strategies_tried']} strategies:")
+                                for strategy in strategies_info:
+                                    logger.debug(f"  - {strategy['category']}: {strategy['selector']} (confidence: {strategy['confidence']:.2f})")
+                            
+                            # Continue with next action rather than breaking for potential recovery
                         else:
-                            logger.info(f"Action successful: {result.message}")
+                            logger.info(f"Enhanced action successful: {result.message}")
+                            
+                            # Track successful strategy for learning
+                            if result.data and 'strategy' in result.data:
+                                session.results['selector_strategies_used'].append({
+                                    'action': action.target_description,
+                                    'strategy': result.data['strategy'],
+                                    'selector': result.data['selector'],
+                                    'confidence': result.data.get('confidence', 0.0)
+                                })
                             
                             # Add delay between actions
                             await self.browser_pool.add_random_delay()
                             
-                            # Wait for page to settle
+                            # Wait for page to settle after navigation
                             await self.browser_pool.wait_for_content_loaded(page)
+                            
+                            # Check if URL changed (successful navigation)
+                            new_url = page.url
+                            if new_url != page_state['url']:
+                                session.results['navigation_path'].append(new_url)
+                                logger.info(f"Navigation detected: {page_state['url']} → {new_url}")
                 
                 # Final content extraction if we haven't done it yet
                 if not session.results['extracted_content']:
                     final_content = await self._extract_final_content(page)
                     session.results['extracted_content'].update(final_content)
                 
+                # Enhanced session results
                 session.results['final_url'] = page.url
                 session.results['total_actions'] = session.current_action
+                session.results['successful_navigation'] = len(session.results['navigation_path']) > 1
+                session.results['strategies_learned'] = len(session.results['selector_strategies_used'])
                 
-                logger.info(f"Scraping session completed: {session.current_action} actions taken")
+                logger.info(f"Enhanced scraping session completed: {session.current_action} actions taken")
+                logger.info(f"Navigation success: {session.results['successful_navigation']}")
+                logger.info(f"Strategies learned: {session.results['strategies_learned']}")
+                
                 return session.results
                 
             except Exception as e:
-                logger.error(f"Scraping session failed: {e}")
-                session.results['errors'].append(str(e))
+                logger.error(f"Enhanced scraping session failed: {e}")
+                session.results['errors'].append({
+                    'type': 'session_failure',
+                    'error': str(e),
+                    'action_number': session.current_action
+                })
                 return session.results
     
     async def _analyze_current_page(self, page, session: ScrapingSession) -> Dict[str, Any]:
-        """Analyze current page state for LLM decision making"""
+        """Analyze current page state for LLM decision making with enhanced details"""
         
         # Get accessibility tree
         accessibility_tree = await self.browser_pool.get_accessibility_tree(page)
@@ -150,25 +196,48 @@ class LayoutAwareScraper:
         except:
             content_summary = "Could not extract page content"
         
+        # Enhanced page analysis for better LLM context
+        try:
+            page_metrics = await page.evaluate("""
+                () => {
+                    return {
+                        clickable_elements: document.querySelectorAll('a, button, [role="button"], [role="tab"]').length,
+                        form_elements: document.querySelectorAll('input, textarea, select').length,
+                        navigation_elements: document.querySelectorAll('nav, [role="navigation"]').length,
+                        has_tabs: document.querySelectorAll('[role="tab"]').length > 0,
+                        has_discussions: document.body.textContent.toLowerCase().includes('discussion'),
+                        viewport_height: window.innerHeight,
+                        scroll_position: window.pageYOffset,
+                        total_height: document.body.scrollHeight
+                    };
+                }
+            """)
+        except:
+            page_metrics = {}
+        
         page_state = {
             'title': title,
             'url': url,
             'accessibility_tree': accessibility_tree,
             'content_summary': content_summary,
-            'timestamp': asyncio.get_event_loop().time()
+            'page_metrics': page_metrics,
+            'timestamp': asyncio.get_event_loop().time(),
+            'action_number': session.current_action
         }
         
-        logger.debug(f"Page analysis complete: {title} ({len(str(accessibility_tree))} chars in a11y tree)")
+        logger.debug(f"Enhanced page analysis complete: {title}")
+        logger.debug(f"Page metrics: {page_metrics}")
+        
         return page_state
     
     async def _extract_content(self, page, action) -> Dict[str, Any]:
-        """Extract content based on LLM action parameters"""
+        """Extract content based on LLM action parameters with enhanced extraction"""
         
         extracted = {}
         params = action.parameters
         
         try:
-            # Extract different types of content
+            # Standard extractions
             if params.get('extract_title', True):
                 title = await page.title()
                 extracted['title'] = title
@@ -186,6 +255,41 @@ class LayoutAwareScraper:
                 """)
                 extracted['links'] = links
             
+            # Enhanced extraction for discussion pages
+            if 'discussion' in page.url.lower():
+                try:
+                    discussion_data = await page.evaluate("""
+                        () => {
+                            const discussions = [];
+                            
+                            // Look for discussion thread elements
+                            const threadElements = document.querySelectorAll('[data-testid*="discussion"], .discussion-item, .thread-item');
+                            threadElements.forEach(el => {
+                                const title = el.querySelector('h1, h2, h3, .title, [data-testid*="title"]');
+                                const author = el.querySelector('.author, [data-testid*="author"]');
+                                const date = el.querySelector('.date, [data-testid*="date"]');
+                                
+                                if (title) {
+                                    discussions.push({
+                                        title: title.textContent.trim(),
+                                        author: author ? author.textContent.trim() : null,
+                                        date: date ? date.textContent.trim() : null
+                                    });
+                                }
+                            });
+                            
+                            return {
+                                discussion_threads: discussions,
+                                total_threads: discussions.length,
+                                page_type: 'discussion_listing'
+                            };
+                        }
+                    """)
+                    extracted['discussion_data'] = discussion_data
+                    logger.info(f"Extracted discussion data: {discussion_data['total_threads']} threads found")
+                except Exception as e:
+                    logger.debug(f"Could not extract discussion-specific data: {e}")
+            
             # Extract specific selectors if provided
             if 'selectors' in params:
                 for name, selector in params['selectors'].items():
@@ -196,11 +300,18 @@ class LayoutAwareScraper:
                     except Exception as e:
                         logger.debug(f"Could not extract {name} with selector {selector}: {e}")
             
-            logger.info(f"Extracted {len(extracted)} content items")
+            # Enhanced metadata extraction
+            extracted['extraction_metadata'] = {
+                'url': page.url,
+                'timestamp': asyncio.get_event_loop().time(),
+                'extraction_method': 'enhanced_llm_guided'
+            }
+            
+            logger.info(f"Enhanced extraction completed: {len(extracted)} content items")
             return extracted
             
         except Exception as e:
-            logger.error(f"Content extraction failed: {e}")
+            logger.error(f"Enhanced content extraction failed: {e}")
             return {'extraction_error': str(e)}
     
     async def _extract_final_content(self, page) -> Dict[str, Any]:
@@ -213,35 +324,76 @@ class LayoutAwareScraper:
                 'final_text_preview': (await page.text_content('body'))[:1000]
             }
             
-            # Try to extract any structured data visible
+            # Enhanced structured data extraction
             try:
-                # Look for lists, tables, etc.
-                lists = await page.evaluate("""
-                    Array.from(document.querySelectorAll('ul, ol')).map(list => 
-                        Array.from(list.querySelectorAll('li')).map(li => li.textContent.trim())
-                    ).filter(list => list.length > 0)
+                structured_data = await page.evaluate("""
+                    () => {
+                        const data = {
+                            lists: [],
+                            tables: [],
+                            headings: [],
+                            navigation_elements: []
+                        };
+                        
+                        // Extract lists
+                        document.querySelectorAll('ul, ol').forEach(list => {
+                            const items = Array.from(list.querySelectorAll('li')).map(li => li.textContent.trim());
+                            if (items.length > 0) {
+                                data.lists.push(items);
+                            }
+                        });
+                        
+                        // Extract tables
+                        document.querySelectorAll('table').forEach(table => {
+                            const rows = Array.from(table.querySelectorAll('tr')).map(row => 
+                                Array.from(row.querySelectorAll('td, th')).map(cell => cell.textContent.trim())
+                            );
+                            if (rows.length > 0) {
+                                data.tables.push(rows);
+                            }
+                        });
+                        
+                        // Extract headings
+                        document.querySelectorAll('h1, h2, h3, h4, h5, h6').forEach(heading => {
+                            data.headings.push({
+                                level: heading.tagName,
+                                text: heading.textContent.trim()
+                            });
+                        });
+                        
+                        // Extract navigation elements
+                        document.querySelectorAll('nav a, [role="navigation"] a').forEach(link => {
+                            data.navigation_elements.push({
+                                text: link.textContent.trim(),
+                                href: link.href
+                            });
+                        });
+                        
+                        return data;
+                    }
                 """)
-                if lists:
-                    final_content['lists'] = lists
+                
+                final_content['structured_data'] = structured_data
+                logger.info(f"Enhanced final extraction: {len(structured_data['lists'])} lists, {len(structured_data['tables'])} tables, {len(structured_data['headings'])} headings")
                     
             except Exception as e:
-                logger.debug(f"Could not extract structured data: {e}")
+                logger.debug(f"Could not extract enhanced structured data: {e}")
             
             return final_content
             
         except Exception as e:
-            logger.error(f"Final content extraction failed: {e}")
+            logger.error(f"Enhanced final content extraction failed: {e}")
             return {'final_extraction_error': str(e)}
 
-# Integration Test Function
-async def test_kaggle_navigation():
-    """Test the core system with a simple Kaggle page navigation"""
+# Enhanced Integration Test Function
+async def test_enhanced_kaggle_navigation():
+    """Test the enhanced system with semantic selector generation"""
     
     # Setup
     config = ScrapingConfig.from_env()
     config.validate()
     
-    # Initialize logging with the corrected import
+    # Initialize logging
     logger = setup_logging(config.log_level, config.log_file)
     
     scraper = LayoutAwareScraper(config)
@@ -249,52 +401,87 @@ async def test_kaggle_navigation():
     try:
         await scraper.initialize()
         
-        # Test session: Navigate to Kaggle competition and find discussion section
+        # Enhanced test session: Navigate to Kaggle competition and find discussion section
         session = ScrapingSession(
             url="https://www.kaggle.com/competitions/openai-to-z-challenge",
-            goal="Navigate to a OpenAI to Z competition page and find the discussion section",
+            goal="Navigate to the Discussion section of the OpenAI to Z Challenge competition",
             max_actions=5
         )
         
         results = await scraper.scrape_page(session)
         
-        # Print results
-        print("\n" + "="*50)
-        print("SCRAPING RESULTS")
-        print("="*50)
+        # Enhanced results display
+        print("\n" + "="*60)
+        print("ENHANCED SCRAPING RESULTS")
+        print("="*60)
         print(f"Final URL: {results.get('final_url', 'N/A')}")
         print(f"Actions taken: {results.get('total_actions', 0)}")
+        print(f"Successful navigation: {results.get('successful_navigation', False)}")
         print(f"Errors: {len(results.get('errors', []))}")
+        print(f"Strategies learned: {results.get('strategies_learned', 0)}")
+        
+        if results.get('navigation_path'):
+            print(f"\nNavigation path:")
+            for i, url in enumerate(results['navigation_path'], 1):
+                print(f"  {i}. {url}")
         
         if results.get('extracted_content'):
-            print(f"Content extracted: {list(results['extracted_content'].keys())}")
+            print(f"\nContent extracted: {list(results['extracted_content'].keys())}")
             
+            # Show discussion-specific data if available
+            if 'discussion_data' in results['extracted_content']:
+                disc_data = results['extracted_content']['discussion_data']
+                print(f"Discussion threads found: {disc_data.get('total_threads', 0)}")
+        
         if results.get('actions_taken'):
-            print("\nActions taken:")
+            print(f"\nActions taken:")
             for i, action in enumerate(results['actions_taken'], 1):
                 print(f"  {i}. {action['action_type']} -> {action['target_description']}")
+                if action.get('confidence'):
+                    print(f"     Confidence: {action['confidence']:.2f}")
+        
+        if results.get('selector_strategies_used'):
+            print(f"\nSuccessful selector strategies:")
+            for strategy in results['selector_strategies_used']:
+                print(f"  - {strategy['strategy']}: {strategy['selector']}")
+                print(f"    For: {strategy['action']} (confidence: {strategy['confidence']:.2f})")
         
         if results.get('errors'):
-            print("\nErrors:")
+            print(f"\nErrors:")
             for error in results['errors']:
-                print(f"  - {error}")
+                if isinstance(error, dict):
+                    print(f"  - {error.get('message', error.get('error', 'Unknown error'))}")
+                else:
+                    print(f"  - {error}")
         
-        print("\nLLM Conversation Summary:")
+        print(f"\nLLM Conversation Summary:")
         print(scraper.llm_agent.get_conversation_summary())
+        
+        # Success evaluation
+        success_indicators = [
+            results.get('successful_navigation', False),
+            'discussion' in results.get('final_url', '').lower(),
+            len(results.get('selector_strategies_used', [])) > 0,
+            len(results.get('errors', [])) == 0
+        ]
+        
+        overall_success = sum(success_indicators) >= 2
+        print(f"\n🎯 OVERALL SUCCESS: {'✅ YES' if overall_success else '❌ NO'}")
+        print(f"Success indicators: {sum(success_indicators)}/4")
         
         return results
         
     except Exception as e:
-        logger.error(f"Test failed: {e}")
+        logger.error(f"Enhanced test failed: {e}")
         raise
     finally:
         await scraper.cleanup()
 
 if __name__ == "__main__":
-    # Run the integration test
-    print("Starting Layout-Aware Scraper Integration Test...")
-    print("This will test navigation on Kaggle using LLM decision-making")
+    # Run the enhanced integration test
+    print("🚀 Starting Enhanced Layout-Aware Scraper Integration Test...")
+    print("This will test navigation on Kaggle using enhanced LLM decision-making and semantic selector generation")
     
-    results = asyncio.run(test_kaggle_navigation())
+    results = asyncio.run(test_enhanced_kaggle_navigation())
     
-    print(f"\nTest completed! Check logs for detailed execution trace.")
+    print(f"\n🏁 Enhanced test completed! Check logs for detailed execution trace.")
