@@ -226,7 +226,7 @@ Be concise and focus on the most likely interpretation.
         
         try:
             response = await self.llm_client.chat.completions.create(
-                model="gpt-4",
+                model="gpt-4o",
                 messages=[
                     {"role": "system", "content": "You are an expert at parsing UI element descriptions for web automation. Always respond with valid JSON."},
                     {"role": "user", "content": context}
