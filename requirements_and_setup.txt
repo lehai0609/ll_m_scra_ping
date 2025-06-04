@@ -1,0 +1,229 @@
+# Requirements and Setup Instructions
+
+## Dependencies (requirements.txt)
+```
+playwright==1.40.0
+openai==1.3.0
+asyncio-extras==1.3.2
+python-dotenv==1.0.0
+```
+
+## Environment Setup (.env file)
+```bash
+# Required
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Optional LLM Configuration
+LLM_MODEL=gpt-4
+MAX_TOKENS=1000
+TEMPERATURE=0.1
+
+# Optional Browser Configuration
+HEADLESS=true
+VIEWPORT_WIDTH=1920
+VIEWPORT_HEIGHT=1080
+
+# Optional Rate Limiting
+REQUEST_DELAY_MIN=1.0
+REQUEST_DELAY_MAX=3.0
+MAX_CONCURRENT_BROWSERS=3
+
+# Optional Retry Configuration
+MAX_RETRIES=3
+RETRY_DELAY=2.0
+ACTION_TIMEOUT=30
+
+# Optional Logging
+LOG_LEVEL=INFO
+LOG_FILE=scraper.log
+```
+
+## Installation Steps
+
+### 1. Create Virtual Environment
+```bash
+python -m venv layout_aware_scraper_env
+source layout_aware_scraper_env/bin/activate  # On Windows: layout_aware_scraper_env\Scripts\activate
+```
+
+### 2. Install Dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 3. Install Playwright Browsers
+```bash
+playwright install chromium
+```
+
+### 4. Set Environment Variables
+Create a `.env` file with your OpenAI API key and other configuration.
+
+### 5. Test Installation
+```bash
+python main.py
+```
+
+## Project Structure
+```
+layout_aware_scraper/
+├── .env                      # Environment configuration
+├── requirements.txt          # Python dependencies
+├── main.py                   # Entry point and integration test
+├── config/
+│   ├── __init__.py
+│   └── settings.py          # Configuration management
+├── core/
+│   ├── __init__.py
+│   ├── browser_pool.py      # Browser automation with stealth
+│   ├── llm_agent.py         # LLM navigation intelligence
+│   └── action_executor.py   # Safe action execution
+├── utils/
+│   ├── __init__.py
+│   └── logger.py           # Structured logging
+└── tests/
+    ├── __init__.py
+    └── integration_test.py  # Test suite
+```
+
+## Quick Start Usage
+
+### Basic Navigation Test
+```python
+import asyncio
+from config.settings import ScrapingConfig
+from main import LayoutAwareScraper, ScrapingSession
+
+async def quick_test():
+    config = ScrapingConfig.from_env()
+    scraper = LayoutAwareScraper(config)
+    
+    await scraper.initialize()
+    
+    session = ScrapingSession(
+        url="https://example.com",
+        goal="Find and click the About link",
+        max_actions=3
+    )
+    
+    results = await scraper.scrape_page(session)
+    await scraper.cleanup()
+    
+    return results
+
+# Run test
+results = asyncio.run(quick_test())
+print(results)
+```
+
+## Current Capabilities (Phase 1)
+
+✅ **Core Infrastructure Complete:**
+- LLM-powered page analysis using accessibility trees
+- Intelligent action planning and execution
+- Stealth browser automation with Playwright
+- Comprehensive error handling and retry logic
+- Structured logging and session management
+
+✅ **Navigation Actions Supported:**
+- **Click**: Buttons, links, tabs with multiple fallback selectors
+- **Type**: Text input with smart field detection
+- **Scroll**: Directional scrolling with customizable amounts
+- **Wait**: Timeout, element appearance, load state waiting
+- **Navigate**: URL navigation with load verification
+- **Extract**: Content extraction with multiple strategies
+
+✅ **Intelligence Features:**
+- Real-time page layout understanding
+- Context-aware action decision making
+- Conversation history for improved decisions
+- Confidence-based action filtering
+- Adaptive selector generation
+
+## Testing & Validation
+
+### Run Integration Test
+```bash
+python main.py
+```
+
+This will test the core system by:
+1. Loading a web page (Kaggle competitions)
+2. Using LLM to analyze page structure
+3. Making intelligent navigation decisions
+4. Executing actions safely with fallbacks
+5. Extracting content when goal is achieved
+
+### Expected Output
+```
+Starting Layout-Aware Scraper Integration Test...
+INFO - Initializing Layout-Aware Scraper...
+INFO - Browser pool initialized with max 3 contexts
+INFO - Starting scraping session: https://www.kaggle.com/competitions
+INFO - Goal: Navigate to a competition page and find the discussion section
+INFO - Action 1/5
+INFO - LLM recommended action: click -> Competition link in listings
+INFO - Successfully clicked: Competition link in listings
+...
+==================================================
+SCRAPING RESULTS
+==================================================
+Final URL: https://www.kaggle.com/competitions/some-competition
+Actions taken: 3
+Errors: 0
+Content extracted: ['title', 'text_content']
+```
+
+## Next Steps (Phase 2)
+
+🔄 **Coming Next:**
+- Multi-tab navigation coordination
+- Deep content extraction with structured data
+- Discussion thread crawling
+- Advanced pagination handling
+- Performance optimization and caching
+
+## Troubleshooting
+
+### Common Issues
+
+**1. OpenAI API Key Error**
+```
+ValueError: OPENAI_API_KEY is required
+```
+- Solution: Set your OpenAI API key in the `.env` file
+
+**2. Playwright Browser Not Found**
+```
+Error: Executable doesn't exist at ...
+```
+- Solution: Run `playwright install chromium`
+
+**3. Navigation Timeouts**
+```
+Timeout waiting for content to load
+```
+- Solution: Increase `ACTION_TIMEOUT` in `.env` or check network connectivity
+
+**4. Low Confidence Actions**
+```
+Action confidence too low: 0.2
+```
+- Solution: This is normal - the system skips uncertain actions for safety
+
+### Debug Mode
+Set `LOG_LEVEL=DEBUG` in `.env` for detailed execution traces.
+
+### Memory Usage
+Monitor browser memory usage with multiple concurrent sessions. Adjust `MAX_CONCURRENT_BROWSERS` if needed.
+
+## Architecture Benefits
+
+🎯 **Why This Approach Works:**
+- **No Brittle Selectors**: LLM understands page layout dynamically
+- **Self-Healing**: Adapts to page changes automatically  
+- **Human-Like Navigation**: Follows natural user interaction patterns
+- **Comprehensive Error Handling**: Graceful degradation on failures
+- **Production Ready**: Built with scalability and reliability in mind
+
+This foundation enables building sophisticated web scraping workflows that adapt to dynamic sites and handle complex navigation scenarios intelligently.
