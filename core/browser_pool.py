@@ -7,7 +7,7 @@ from typing import Optional, Dict, Any, AsyncGenerator
 from playwright.async_api import async_playwright, Browser, BrowserContext, Page, Playwright
 import logging
 
-from ..config.settings import ScrapingConfig
+from config.settings import ScrapingConfig
 
 logger = logging.getLogger("layout_aware_scraper.browser_pool")
 

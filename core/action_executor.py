@@ -4,8 +4,8 @@ import logging
 from typing import Dict, Any, Optional, Tuple
 from playwright.async_api import Page, TimeoutError as PlaywrightTimeoutError
 
-from .llm_agent import NavigationAction, ActionType
-from ..config.settings import ScrapingConfig
+from core.llm_agent import NavigationAction, ActionType
+from config.settings import ScrapingConfig
 
 logger = logging.getLogger("layout_aware_scraper.action_executor")
 

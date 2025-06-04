@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from enum import Enum
 import openai
 
-from ..config.settings import ScrapingConfig
+from config.settings import ScrapingConfig
 
 logger = logging.getLogger("layout_aware_scraper.llm_agent")
 

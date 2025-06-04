@@ -10,6 +10,8 @@ from utils.logger import setup_logging  # Fixed import
 from core.browser_pool import BrowserPool
 from core.llm_agent import LLMNavigationAgent, ActionType
 from core.action_executor import ActionExecutor
+from dotenv import load_dotenv
+load_dotenv()
 
 logger = logging.getLogger("layout_aware_scraper.main")
 
